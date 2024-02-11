@@ -1,10 +1,11 @@
 #!/bin/env python3
+import sys
 import graph.UndirectedGraph
-import graph.DirectedGraph
+from graph.DirectedGraph import Graph
 
 
 @graph.UndirectedGraph.UndirectedGraph
-class UndirectedGraph(graph.DirectedGraph.Graph):
+class UndirectedGraph(Graph):
     pass
 
 

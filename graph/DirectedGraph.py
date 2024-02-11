@@ -1,4 +1,5 @@
-from typing import List, Set, Optional, Iterator, Dict, TextIO, TypeVar
+from typing import List, Set, Tuple, Optional, Iterator, Dict, TextIO, TypeVar
+import queue
 import sys
 
 
@@ -7,6 +8,8 @@ class Node:
     _in: List["Node"]
     _out: List["Node"]
     _graph: "Graph"
+
+    T = TypeVar("T", bound="Node")
 
     @property
     def id(self):
@@ -28,12 +31,6 @@ class Node:
         self._graph = graph
         self._in = []
         self._out = []
-
-    def __str__(self) -> str:
-        return self.id
-
-    def __repr__(self) -> str:
-        return f"Node({str(self)})"
 
     def link(self, node: "Node"):
         """
@@ -78,6 +75,25 @@ class Node:
         @param reverse: If True, the search will be done in the inverse graph
             i.e. following the ingoing edges.
         @return: An iterator over the reachable nodes in dfs order
+        @note: The iterator starts with the node itself
+        @note: This is an adapter for `self.dfs_path`.
+        If you care for path recunstruction, you should use that method instead.
+        """
+        return (n.node for n in self.dfs_path(reverse=reverse, _visited=_visited))
+
+    def dfs_path(
+        self,
+        *,
+        reverse=False,
+        _visited: Optional[Set["Node"]] = None,
+        _search_node: Optional["SearchNode"] = None,
+    ) -> Iterator["SearchNode"]:
+        """
+        @brief: Depth-first search iterator with path recunsturction
+        @param reverse: If True, the search will be done in the inverse graph
+            i.e. following the ingoing edges.
+        @return: An iterator over the reachable nodes as `SearchNode` in dfs order
+        @note: The iterator starts with `SearchNode(0, self)` itself
         """
         if _visited is None:
             _visited = set()
@@ -86,9 +102,121 @@ class Node:
             return
         _visited.add(self)
 
+        if _search_node is None:
+            _search_node = SearchNode(self, 0)
+
         for node in self.out_nodes if not reverse else self.in_nodes:
-            yield from node.dfs(_visited=_visited, reverse=reverse)
+            yield from node.dfs_path(
+                _visited=_visited,
+                reverse=reverse,
+                _search_node=_search_node.next_node(node),
+            )
+        yield _search_node
+
+    def bfs(
+        self, *, max_depth: Optional[int] = None, reverse=False
+    ) -> Iterator[Tuple[int, "Node"]]:
+        """
+        @brief: Breadth-first search iterator
+        @param max_depth: The maximum depth to search for, unlimited by default.
+        @param reverse: If True, the search will be done in the inverse graph
+            i.e. following the ingoing edges.
+        @return: An iterator over (distance, node) tuples in bfs order,
+            where distance is the amount of edges followed to reach the node.
+        @note: The first item is `(0, self)`
+        @note: This is an adapter for `self.bfs_path`.
+        If you care for path recunstruction, you should use that method instead.
+        """
+        return (
+            (n.dist, n.node)
+            for n in self.bfs_path(max_depth=max_depth, reverse=reverse)
+        )
+
+    def bfs_path(
+        self, *, max_depth: Optional[int] = None, reverse=False
+    ) -> Iterator["SearchNode"]:
+        """
+        @brief: Breadth-first search iterator with path recunstruction
+        @param max_depth: The maximum depth to search for, unlimited by default.
+        @param reverse: If True, the search will be done in the inverse graph
+            i.e. following the ingoing edges.
+        @return: An iterator over `SearchNode`s in bfs order
+        @note: The first node is `SearchNode(0, self)`
+        """
+        visited: Set["Node"] = set()
+        visited.add(self)
+
+        q: queue.Queue["SearchNode"] = queue.Queue()
+        q.put(SearchNode(self, 0))
+        while not q.empty():
+            search_node = q.get()
+            yield search_node
+            if max_depth is not None and search_node.dist == max_depth:
+                continue
+
+            for adj_node in (
+                search_node.node.out_nodes if not reverse else search_node.node.in_nodes
+            ):
+                if adj_node not in visited:
+                    visited.add(adj_node)
+                    q.put(search_node.next_node(adj_node))
+
+    def __str__(self) -> str:
+        return self.id
+
+    def __repr__(self) -> str:
+        return f"Node({str(self)})"
+
+
+class SearchNode:
+    """Helper class for single source search algorithms"""
+
+    _node: Node.T
+    _dist: int
+    _parent: Optional["SearchNode"]
+
+    @property
+    def node(self) -> Node.T:
+        """The encapsulated node"""
+        return self._node
+
+    @property
+    def dist(self) -> int:
+        """The distance from the root of the search to this node"""
+        return self._dist
+
+    def next_node(self, node: Node, added_distance=1) -> "SearchNode":
+        """Constructs the next node in the search"""
+        return SearchNode(node, self._dist + added_distance, self)
+
+    def __init__(self, node: Node.T, dist: int, parent: Optional["SearchNode"] = None):
+        self._node = node
+        self._dist = dist
+        self._parent = parent
+
+    def _backtrack(self) -> Iterator["SearchNode"]:
+        if self._parent is not None:
+            yield from self._parent._backtrack()
         yield self
+
+    def path(self) -> List[Node.T]:
+        """Returns the path from the root of the search to this node"""
+        return [n._node for n in self._backtrack()]
+
+    def path_as_node(self) -> List["SearchNode"]:
+        """
+        @brief: Returns the path from the root of the search to this node as `SearchNode`
+        @note: This is useful in case you need the distance from root for each node in the path
+            If you're only interested in the ordering of the nodes, consider using `self.path` instead
+        """
+
+        return list(self._backtrack())
+
+    def __str__(self) -> str:
+        return str((self._dist, self._node))
+
+    def __repr__(self) -> str:
+        return f"SearchNode{str(self)}"
 
 
 class Graph:
