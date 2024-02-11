@@ -1,15 +1,24 @@
 #!/bin/env python3
-from graph.DirectedGraph import Graph, Node
-from graph.UndirectedGraph import UndirectedNode
+import graph.UndirectedGraph
+import graph.DirectedGraph
+
+
+@graph.UndirectedGraph.UndirectedGraph
+class UndirectedGraph(graph.DirectedGraph.Graph):
+    pass
 
 
 def main():
-    graph = Graph.read_graph(UndirectedNode)
+    graph = UndirectedGraph.read_graph()
 
-    for node in graph:
-        print(f"Node {node.id}:")
-        print("Out:", node.out_nodes)
-        print("In:", node.in_nodes)
+    a = graph.new("a")
+    b = graph.new("b")
+    c = graph.new("c")
+    a.link(b)
+    b.link(c)
+
+    for component in graph.connected_components():
+        print(*component)
 
 
 if __name__ == "__main__":

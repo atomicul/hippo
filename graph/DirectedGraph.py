@@ -1,5 +1,5 @@
-from typing import List, Set, Optional, Iterator, Dict
-from copy import copy
+from typing import List, Set, Optional, Iterator, Dict, TextIO, TypeVar
+import sys
 
 
 class Node:
@@ -60,7 +60,8 @@ class Node:
     def remove(self):
         """
         @brief: Removes the node from the graph, including its edges.
-        @warning: This leaves the node in an invalid state.
+        @warning: This leaves the node object in an invalid state.
+                    You shall not call methods on any dangling reference to it.
         """
         for node in self._in:
             node._out = [n for n in node._out if n is not self]
@@ -85,7 +86,7 @@ class Node:
             return
         _visited.add(self)
 
-        for node in self._out if not reverse else self._in:
+        for node in self.out_nodes if not reverse else self.in_nodes:
             yield from node.dfs(_visited=_visited, reverse=reverse)
         yield self
 
@@ -94,34 +95,38 @@ class Graph:
     _nodes: Dict[str, Node]
     _node_type: type["Node"]
 
-    @staticmethod
+    T = TypeVar("T", bound="Graph")
+
+    @classmethod
     def read_graph(
+        cls: type[T],
         node: type["Node"] = Node,
         *,
+        input_buffer: TextIO = sys.stdin,
         limit: Optional[int] = None,
         sep: Optional[str] = None,
-    ) -> "Graph":
+    ) -> T:
         """
-        @brief: Reads a graph from stdin
+        @brief: Reads a graph from `input_buffer` (stdin by default)
         @note: The input is expected to be in the form of edges, one per line.
         @param node: The node class to be used in the graph
+        @param input_buffer: The input stream to read from
+            By default, sys.stdin
         @param limit: Maximum number of edges (lines) to read.
             If omitted, the function will attemtp to read until EOF.
         @param sep: The separator bethween the nodes of an edge.
             By default, any whitespace.
         @return: The graph object
         """
-        out = Graph(node)
-        try:
-            for _ in range(limit) if limit else _forever():
-                x, y = input().split(sep)
-                for id in (x, y):
-                    if id not in out:
-                        out.new(id)
+        out = cls(node)
+        for _, line in zip(range(limit) if limit else _forever(), input_buffer):
+            x, y = line.split(sep)
+            for id in (x, y):
+                if id not in out:
+                    out.new(id)
 
-                out[x].link(out[y])
-        finally:
-            return out
+            out[x].link(out[y])
+        return out
 
     def __init__(self, node: type["Node"] = Node):
         """
@@ -144,23 +149,6 @@ class Graph:
         node = self._node_type(id, self)
         self._nodes[id] = node
         return node
-
-    def loosely_connected_compontents(self) -> Iterator[Set["Node"]]:
-        """
-        @brief: Finds the loosely connected components of the graph
-        @return: An iterator over the components as `Set[Node]`
-        """
-
-        visited: Set[Node] = set()
-        for node in self:
-            visited_cpy = copy(visited)
-            iter1 = set(node.dfs(_visited=visited_cpy))
-            iter2 = set(node.dfs(_visited=visited, reverse=True))
-            print(f"From {node}: ", *iter1, ":", *iter2)
-            visited = visited | iter1 | iter2
-
-            if iter1 or iter2:
-                yield iter1 | iter2
 
     def __len__(self) -> int:
         return len(self._nodes)
