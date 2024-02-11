@@ -2,6 +2,7 @@
 import sys
 import graph.UndirectedGraph
 from graph.DirectedGraph import Graph
+from itertools import groupby
 
 
 @graph.UndirectedGraph.UndirectedGraph
@@ -10,16 +11,14 @@ class UndirectedGraph(Graph):
 
 
 def main():
-    graph = UndirectedGraph.read_graph()
+    tree = Graph.read_graph()
 
-    a = graph.new("a")
-    b = graph.new("b")
-    c = graph.new("c")
-    a.link(b)
-    b.link(c)
-
-    for component in graph.connected_components():
-        print(*component)
+    root = tree.tree_root()
+    if root is None:
+        sys.exit(1)
+    for _, level in groupby(root.bfs(), key=lambda x: x[0]):
+        level = (x[1] for x in level)
+        print(*level)
 
 
 if __name__ == "__main__":

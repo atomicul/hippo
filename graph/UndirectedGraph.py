@@ -46,4 +46,7 @@ def UndirectedGraph(n: type[Graph]):
                     continue
                 yield node.dfs(_visited=visited)
 
+        def has_cycle(self, *_, **__) -> bool:
+            return super().has_cycle(allow_trivial_back_edges=True)
+
     return UGraph
