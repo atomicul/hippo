@@ -332,9 +332,19 @@ class Graph:
         self._nodes[id] = node
         return node
 
+    def strongly_connected_components(self) -> Iterator[Iterator[Node]]:
+        """Provides an iterator over the strongly connected components of the graph"""
+        order = self.topological_order(reverse=True)
+        visited: Set[Node] = set()
+        for node in order:
+            if node not in visited:
+                yield node.dfs(_visited=visited)
+
     def topological_order(self, *, reverse=False) -> Iterator[Node]:
         """
         @brief: Topological order iterator
+        @warning: This method is only guaranteed to yield
+            a valid topological order if the graph is a acyclic
         @param reverse: If true, iterate in reverse topological order
         @return: An iterator over the nodes in topological order
         """
