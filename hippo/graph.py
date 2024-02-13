@@ -124,8 +124,8 @@ class Node:
         @param reverse: If True, the search will be done in the inverse graph
             i.e. following the ingoing edges.
         @return: An iterator over each layer of the bfs tree
-        @note: The first object in the iterator is the iterator
-            with the root node as its sole element
+        @note: The first group in the return iterator
+            has the root node as its sole element
         @note: This is an adapter for `self.bfs_path`.
             If you care for path recunstruction, you should use that method instead.
         """
