@@ -1,4 +1,5 @@
 from typing import List, Set, Tuple, Optional, Iterator, Dict, TextIO, TypeVar
+import itertools
 import enum
 import queue
 import sys
@@ -116,22 +117,25 @@ class Node:
 
     def bfs(
         self, *, max_depth: Optional[int] = None, reverse=False
-    ) -> Iterator[Tuple[int, "Node"]]:
+    ) -> Iterator[Iterator["Node"]]:
         """
         @brief: Breadth-first search iterator
         @param max_depth: The maximum depth to search for, unlimited by default.
         @param reverse: If True, the search will be done in the inverse graph
             i.e. following the ingoing edges.
-        @return: An iterator over (distance, node) tuples in bfs order,
-            where distance is the amount of edges followed to reach the node.
-        @note: The first item is `(0, self)`
+        @return: An iterator over each layer of the bfs tree
+        @note: The first object in the iterator is the iterator
+            with the root node as its sole element
         @note: This is an adapter for `self.bfs_path`.
-        If you care for path recunstruction, you should use that method instead.
+            If you care for path recunstruction, you should use that method instead.
         """
-        return (
-            (n.dist, n.node)
-            for n in self.bfs_path(max_depth=max_depth, reverse=reverse)
-        )
+
+        search_nodes = self.bfs_path(max_depth=max_depth, reverse=reverse)
+        layers = itertools.groupby(search_nodes, key=lambda x: x.dist)
+        layers = (x[1] for x in layers)
+        layers = ((x.node for x in layer) for layer in layers)
+
+        return layers
 
     def bfs_path(
         self, *, max_depth: Optional[int] = None, reverse=False
