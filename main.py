@@ -1,15 +1,9 @@
 #!/bin/env python3
-import graph.UndirectedGraph
-from graph.DirectedGraph import Graph
-
-
-@graph.UndirectedGraph.UndirectedGraph
-class UndrectedGraph(Graph):
-    pass
+from hippo.shortcuts import UndirectedGraph
 
 
 def main():
-    graph = Graph.read_graph()
+    graph = UndirectedGraph.read_graph()
 
     node = next(iter(graph))
 

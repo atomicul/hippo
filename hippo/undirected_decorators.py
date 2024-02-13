@@ -1,8 +1,8 @@
 from typing import Set, Iterator
-from .DirectedGraph import Node, Graph
+from .graph import Node, Graph
 
 
-def UndirectedNode(n: type[Node]):
+def undirected_node(n: type[Node]):
     """
     @brief: A decorator that makes a Node class undirected
 
@@ -26,7 +26,7 @@ def UndirectedNode(n: type[Node]):
     return UNode
 
 
-def UndirectedGraph(n: type[Graph]):
+def undirected_graph(n: type[Graph]):
     """
     @brief: A decorator that specializes a graph to an undirected graph
 
@@ -36,7 +36,7 @@ def UndirectedGraph(n: type[Graph]):
 
     class UGraph(n):
         def __init__(self, node: type[Node] = Node):
-            n.__init__(self, UndirectedNode(node))
+            n.__init__(self, undirected_node(node))
 
         def connected_components(self) -> Iterator[Iterator[Node]]:
             """Provides an iterator over the connected components of the graph"""
