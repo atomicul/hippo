@@ -39,22 +39,32 @@ class Node:
         @brief: Adds an edge to the given node
         @param node: The node to link to
         @throws ValueError: If the nodes have different parent graphs
+        @throws TypeError: If a derived class puts a constraint on the type of the node
+        @return self
         """
         if self._graph is not node._graph:
             raise ValueError("Cannot link nodes from different graphs")
 
         if self is node:
-            return
+            return self
 
         if node not in self._out:
             self._out.append(node)
         if self not in node._in:
             node._in.append(self)
 
+        return self
+
     def unlink(self, node: "Node"):
-        """Removes the edge to the given node if there is one"""
+        """
+        @brief: Removes the edge to the given node if there is one
+        @throws TypeError: If a derived class puts a constraint on the type of the node
+        @return self
+        """
         self._out = [n for n in self._out if n is not node]
         node._in = [n for n in node._in if n is not self]
+
+        return self
 
     def remove(self):
         """
@@ -219,7 +229,7 @@ class SearchNode:
     """Helper class for single source search algorithms"""
 
     _node: Node.T
-    _dist: int
+    _dist: float
     _parent: Optional["SearchNode"]
 
     @property
@@ -228,7 +238,7 @@ class SearchNode:
         return self._node
 
     @property
-    def dist(self) -> int:
+    def dist(self) -> float:
         """The distance from the root of the search to this node"""
         return self._dist
 
@@ -242,11 +252,13 @@ class SearchNode:
             raise Exception("No parent")
         return self._parent
 
-    def next_node(self, node: Node, added_distance=1) -> "SearchNode":
+    def next_node(self, node: Node, added_distance: float = 1) -> "SearchNode":
         """Constructs the next node in the search"""
         return SearchNode(node, self._dist + added_distance, self)
 
-    def __init__(self, node: Node.T, dist: int, parent: Optional["SearchNode"] = None):
+    def __init__(
+        self, node: Node.T, dist: float, parent: Optional["SearchNode"] = None
+    ):
         self._node = node
         self._dist = dist
         self._parent = parent
